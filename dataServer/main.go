@@ -1,17 +1,27 @@
 package main
 
 import (
+	"github.com/mirinda123/tiny-distributed-oss/dataServer/heartbeat"
+	"github.com/mirinda123/tiny-distributed-oss/dataServer/locate"
 	"github.com/mirinda123/tiny-distributed-oss/objects"
 	"log"
 	"net/http"
 	"os"
 )
 
+
 func main() {
-	os.Setenv("STORAGE_ROOT", "D:")
-	os.Setenv("LISTEN_ADDRESS",":12345")
+
+
+	//注意接口服务的object,heartbeat,locate这三个包和数据服务的三个包是不一样的，具体的见书
+
+	go heartbeat.StartHeartbeat()
+	go locate.StartLocate()
+
+
 	//lujing := os.Getenv("STORAGE_ROOT") + "\\objects\\" + "123.txt"
 	//os.Create(lujing)
+
 	//访问objects的时候，交给Handler处理
 	http.HandleFunc("/objects/",objects.Handler)
 
