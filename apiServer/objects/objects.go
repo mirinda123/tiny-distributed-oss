@@ -3,6 +3,8 @@ package objects
 import (
 	"fmt"
 	"github.com/mirinda123/tiny-distributed-oss/apiServer/heartbeat"
+	"github.com/mirinda123/tiny-distributed-oss/apiServer/locate"
+	"github.com/mirinda123/tiny-distributed-oss/lib/objectstream"
 	"io"
 	"log"
 	"net/http"
@@ -34,6 +36,11 @@ func storeObject(r io.Reader, object string) (int, error) {
 
 	//Close方法返回的error，用来通知调用者在数据传输的时候发生的错误
 	err = stream.Close()
+	if err != nil{
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 
 }
 
@@ -44,5 +51,26 @@ func putStream(object string) (*objectstream.PutStream, error){
 		return nil, fmt.Errorf("cannot find any data server")
 	}
 
-	return objectstream.NewPutStream()
+	return objectstream.NewPutStream(server, object), nil
+}
+
+
+func get(w http.ResponseWriter, r *http.Request) {
+	object := strings.Split(r.URL.EscapedPath(), "/")[2]
+	//返回一个Getstream结构体
+	stream, e := getStream(object)
+	if e != nil {
+		log.Println(e)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	io.Copy(w, stream)
+}
+
+func getStream(object string) (io.Reader, error) {
+	server := locate.Locate(object)
+	if server == "" {
+		return nil, fmt.Errorf("object %s locate fail", object)
+	}
+	return objectstream.NewGetStream(server, object)
 }
